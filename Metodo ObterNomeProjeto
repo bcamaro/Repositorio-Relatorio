@@ -1,0 +1,39 @@
+private string ObterNomeProjeto(string nomeDocumento)
+{
+    string nomeProjeto = string.Empty;
+
+    // Verifica se o nome do documento contém espaços
+    int indexEspaco = nomeDocumento.IndexOf(' ');
+
+    if (indexEspaco != -1)
+    {
+        // Obtém a parte do nome do projeto antes do primeiro espaço
+        nomeProjeto = nomeDocumento.Substring(0, indexEspaco).Trim();
+    }
+    else if (nomeDocumento.Contains('_'))
+    {
+        string[] partes = nomeDocumento.Split('_');
+        if (partes.Length >= 2)
+        {
+            nomeProjeto = partes[0].Trim();
+        }
+    }
+    else if (nomeDocumento.Contains('-'))
+    {
+        string[] partes = nomeDocumento.Split('-');
+        if (partes.Length >= 2)
+        {
+            nomeProjeto = partes[0].Trim();
+        }
+    }
+    else if (nomeDocumento.Contains('.'))
+    {
+        string[] partes = nomeDocumento.Split('.');
+        if (partes.Length >= 2)
+        {
+            nomeProjeto = partes[0].Trim();
+        }
+    }
+
+    return nomeProjeto;
+}
