@@ -1,0 +1,52 @@
+ private void Carimbo_Click(object sender, RoutedEventArgs e)
+        {
+            
+            //Verifica se um item foi selecionado na ListView
+            if (Lista_Pdfs.SelectedItem != null)
+            {
+                //Obtem o caminho do arquivo pdf slecionado na ListView
+                string selectedPdf = (string)((ListViewItem)Lista_Pdfs.SelectedItem).Content;
+                //Especifica o caminho completo do arquivo PDF selecionado
+                string filePath = Path.Combine(directoryPath, selectedPdf);
+
+                //Verifica se o arquivo PDF existe
+                if (File.Exists(filePath))
+                {
+                    //Chama o método para adicionar o carimbo ao PDF
+                    Adicionar_Carimbo(filePath);
+
+                    string projectName = ObterNomeProjeto(selectedPdf);
+                    
+                    foreach (string OutputDirectory in outputDirectories)
+                        {
+                            string outputFile = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(filePath) + "_A_Aprovado.pdf");
+                            //Obtém o nome do projeto a partir do nome do documento
+
+                        //Verifica se a pasta do projeto existe, senão cria-a
+                        string projectFolderPath = Path.Combine(OutputDirectory, projectName);
+                        if (!Directory.Exists(projectFolderPath))
+                            {
+                            Directory.CreateDirectory(projectFolderPath);
+                            }
+                        string destinationFileName = Path.GetFileNameWithoutExtension(selectedPdf) + "A_Aprovado" + Path.GetExtension(selectedPdf);
+                        string destinationFilePath = Path.Combine(projectFolderPath, destinationFileName);
+                           File.Move(outputFile, destinationFilePath);
+                            
+                        }
+
+                        // Atualiza a ListView
+                        Lista_Pdfs.Items.Remove(Lista_Pdfs.SelectedItem);
+
+                        //Exclui o arquivo original da pasta de entrada
+                        File.Delete(filePath);
+                }
+                else
+                {
+                    MessageBox.Show("O diretório não existe.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            else
+            {
+                MessageBox.Show("Por favor, selecione um arquivo PDF da lista.", "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+        }
