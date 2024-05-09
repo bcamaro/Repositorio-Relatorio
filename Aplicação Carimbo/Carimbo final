@@ -1,0 +1,144 @@
+private void Adicionar_Carimbo(string _selectedPdfPath, System.Windows.Controls.Canvas sizepdf, int pageNumber, string outputDirectory, string comentarios)
+{
+    using (var pdfReader = new iTextSharp.text.pdf.PdfReader(_selectedPdfPath))
+    {
+        string outputFile = System.IO.Path.Combine(outputDirectory, System.IO.Path.GetFileNameWithoutExtension(_selectedPdfPath) + "_APROVADO.pdf");
+
+        using (var fileStream = new FileStream(outputFile, FileMode.Create))
+        using (var pdfStamper = new PdfStamper(pdfReader, fileStream))
+        {
+            PdfContentByte pdfContent;
+
+            // Loop através de todas as páginas do PDF
+            for (int i = 1; i <= pdfReader.NumberOfPages; i++)
+            {
+                // Obtém o conteúdo da página atual
+                pdfContent = pdfStamper.GetOverContent(i);
+
+                // Obtém as dimensões da página PDF original
+                Rectangle pageSize = pdfReader.GetPageSize(i);
+                float pdfPageWidth = pageSize.Width;
+                float pdfPageHeight = pageSize.Height;
+
+                // Obtém a lista de retângulos para a página atual
+                var rectanglesPerPage = stampRectanglePerPage[i - 1];
+
+                // Adiciona os retângulos como carimbos na página PDF
+                foreach (var rectangle in rectanglesPerPage)
+                {
+                    // Obtém as coordenadas do retângulo no Canvas
+                    double x = Canvas.GetLeft(rectangle);
+                    double y = Canvas.GetTop(rectangle);
+                    double width = rectangle.Width;
+                    double height = rectangle.Height;
+
+                    // Calcula as coordenadas do retângulo no PDF
+                    float pdfX = (float)(x * pdfPageWidth / sizepdf.ActualWidth);
+                    float pdfY = (float)((sizepdf.ActualHeight - y - height) * pdfPageHeight / sizepdf.ActualHeight);
+                    float pdfWidth = (float)(width * pdfPageWidth / sizepdf.ActualWidth);
+                    float pdfHeight = (float)(height * pdfPageHeight / sizepdf.ActualHeight);
+
+                    // Calcula o centro do retângulo
+                    float centerX = pdfX + pdfWidth / 2;
+                    float centerY = pdfY + pdfHeight / 2;
+
+                    // Adiciona o retângulo como carimbo na página PDF
+                    pdfContent.Rectangle(pdfX, pdfY, pdfWidth, pdfHeight);
+                    pdfContent.SetRGBColorStroke(0, 0, 128);
+                    pdfContent.SetLineWidth(1.8f); // Define a largura da linha
+                    pdfContent.Stroke(); // Desenha a borda do retângulo
+
+                    // Adiciona a imagem dentro do retângulo
+                    float logoImageWidth = pdfWidth * 0.85f; // Ajuste conforme necessário
+                    float logoImageHeight = pdfHeight * 0.85f; // Ajuste conforme necessário
+
+                    float logoverticalAdjustmentFactor = 0.01f; // Ajuste conforme necessário
+                    float logohorizontalAdjustmentFactor = 0.04f;
+                    float logoverticalAdjustment = pdfHeight * logoverticalAdjustmentFactor;
+                    float logohorizontalAdjustment = pdfWidth * logohorizontalAdjustmentFactor;
+                    // Calcula as coordenadas de posicionamento da imagem da assinatura para que fique centralizada
+                    float logoImageX = centerX - (logoImageWidth / 2) - logohorizontalAdjustment;
+                    float logoImageY = centerY - (logoImageHeight / 2) - logoverticalAdjustment;
+
+                    iTextSharp.text.Image image = iTextSharp.text.Image.GetInstance(logoImagePath);
+                    image.SetAbsolutePosition(logoImageX, logoImageY);
+                    image.ScaleToFit(logoImageWidth, logoImageHeight);
+                    pdfContent.AddImage(image);
+                    float imageWidth = image.ScaledWidth;
+                    float imageHeight = image.ScaledHeight;
+
+                    // Adiciona a data e hora atual dentro do retângulo
+                    string currentDate = DateTime.Now.ToString("dd-MM-yyyy");
+
+                    // Calcular dinamicamente o tamanho da fonte com base na largura da página
+                    float fontSize = pdfWidth * 0.078f; // Ajuste o fator de escala conforme necessário
+
+                    // Obtém a fonte
+                    BaseFont font = BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1250, BaseFont.NOT_EMBEDDED);
+
+                    // Obtém a largura do texto
+                    float textWidth = font.GetWidthPoint(currentDate, fontSize);
+
+                    // Define o fator de ajuste para a posição vertical do texto
+                    float verticalAdjustmentFactor = 0.12f; // Ajuste conforme necessário
+                    float horizontalAdjustmentFactor = 0.16f;
+                    // Calcula o ajuste vertical com base na altura do retângulo
+                    float verticalAdjustment = pdfHeight * verticalAdjustmentFactor;
+                    float horizontalAdjustment = pdfWidth * horizontalAdjustmentFactor;
+
+                    // Calcula a posição do texto para que fique centralizado
+                    float textX = centerX - (textWidth / 2) + horizontalAdjustment;
+                    float textY = centerY + (fontSize / 2) - verticalAdjustment; // Ajuste conforme necessário para centralizar verticalmente
+
+                    pdfContent.BeginText();
+                    pdfContent.SetFontAndSize(font, fontSize);
+                    pdfContent.SetRGBColorFill(0, 0, 0); // Define a cor do texto (preto)
+                    pdfContent.SetTextMatrix(textX, textY); // Define a posição do texto dentro do retângulo
+                    pdfContent.ShowText(currentDate); // Mostra o texto
+                    pdfContent.EndText();
+
+                    // Adiciona o texto "APROVADO" acima da data e hora
+                    string textoAprovado = "APROVADO";
+                    float textoFontSize = pdfWidth * 0.11f; // Ajuste conforme necessário
+                    BaseFont textoFont = BaseFont.CreateFont(BaseFont.HELVETICA_BOLD, BaseFont.CP1250, BaseFont.NOT_EMBEDDED);
+                    float textoWidth = textoFont.GetWidthPoint(textoAprovado, textoFontSize);
+                    float apverticalAdjustmentFactor = 0.07f; // Ajuste conforme necessário
+                    float aphorizontalAdjustmentFactor = 0.14f;
+                    // Calcula o ajuste vertical com base na altura do retângulo
+                    float apverticalAdjustment = pdfHeight * apverticalAdjustmentFactor;
+                    float aphorizontalAdjustment = pdfWidth * aphorizontalAdjustmentFactor;
+
+                    // Calcula a posição do texto "APROVADO" acima da data e hora
+                    float textoX = centerX - (textoWidth / 2) + aphorizontalAdjustment;
+                    float textoY = centerY + (fontSize * 0.75f) + apverticalAdjustment; // Posiciona acima da data e hora
+                    pdfContent.BeginText();
+                    pdfContent.SetFontAndSize(textoFont, textoFontSize);
+                    pdfContent.SetRGBColorFill(0, 0, 0); // Define a cor do texto para azul
+                    pdfContent.SetTextMatrix(textoX, textoY);
+                    pdfContent.ShowText(textoAprovado);
+                    pdfContent.EndText();
+
+                    // Define o tamanho desejado da imagem da assinatura
+                    float signatureImageWidth = pdfWidth * 0.4f; // Ajuste conforme necessário
+                    float signatureImageHeight = pdfHeight * 0.4f; // Ajuste conforme necessário
+
+                    float assverticalAdjustmentFactor = 0.23f; // Ajuste conforme necessário
+                    float asshorizontalAdjustmentFactor = 0.24f;
+
+                    // Calcula os ajustes com base nos fatores
+                    string assinaturaUtilizadorSelecionada = ConsultarAssinaturaNaBaseDeDados(utilizadorSelecionado);
+                    Console.WriteLine(assinaturaUtilizadorSelecionada);
+                    if (assinaturaUtilizadorSelecionada != null)
+                    {
+                        float assverticalAdjustment = pdfHeight * assverticalAdjustmentFactor;
+                        float asshorizontalAdjustment = pdfWidth * asshorizontalAdjustmentFactor;
+                        // Calcula as coordenadas de posicionamento da imagem da assinatura para que fique centralizada
+                        float signatureImageX = centerX - (signatureImageWidth / 2) + asshorizontalAdjustment;
+                        float signatureImageY = centerY - (signatureImageHeight / 2) - assverticalAdjustment;
+                        iTextSharp.text.Image signatureImage = iTextSharp.text.Image.GetInstance(assinaturaUtilizadorSelecionada);
+                        signatureImage.SetAbsolutePosition(signatureImageX, signatureImageY);
+                        signatureImage.ScaleToFit(signatureImageWidth, signatureImageHeight);
+                        pdfContent.AddImage(signatureImage);
+                    }
+                }
+            }
