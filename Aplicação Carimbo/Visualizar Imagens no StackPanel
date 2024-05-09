@@ -1,0 +1,137 @@
+public class PdfImage
+        {
+            public string ImagePath { get; set; }
+            public bool IsStamped { get; set; }
+            public System.Windows.Point StampPosition { get; set; } //Posição do carimbo na página
+            public int PageNumber { get; set; }
+            public double Width { get; set; }
+            public double Height { get; set; }
+            public TextBlock TextBlock { get; set; } //Referência ao TextBlock associado ao carimbo
+
+            public PdfImage(string imagePath, int pageNumber)
+            {
+                ImagePath = imagePath;
+                IsStamped = false;
+                StampPosition = new System.Windows.Point(-1, -1); //Posição padrão fora da página
+                PageNumber = pageNumber;
+                Width = Width;
+                Height = Height;
+            }
+        }
+
+        private void LoadPdfPages(string _selectedPdfPath)
+        {
+
+            pdfImages = new List<PdfImage>();
+
+            using (PdfiumViewer.PdfDocument pdfDocument = PdfiumViewer.PdfDocument.Load(_selectedPdfPath))
+            {
+                for (int i = 0; i < pdfDocument.PageCount; i++)
+                {
+                    using (var image = pdfDocument.Render(i, 300, 300, true))
+                    {
+                        string imagePath = $"page_{i}.png";
+                        image.Save(imagePath, ImageFormat.Png);
+                        PdfImage pdfImage = new PdfImage(imagePath, i + 1);
+                        pdfImages.Add(pdfImage);
+                        stampRectanglePerPage.Add(new List<System.Windows.Shapes.Rectangle>());
+                    }
+                }
+            }
+        }
+        private System.Windows.Size GetPdfPageSize(PdfFileInfo _selectedPdfFileInfo, int pageNumber)
+        {
+            using (iTextSharp.text.pdf.PdfReader pdfReader = new iTextSharp.text.pdf.PdfReader(_selectedPdfFileInfo.FilePath))
+            {
+                Rectangle pageSize = pdfReader.GetPageSize(pageNumber);
+                return new System.Windows.Size((int)pageSize.Width, (int)pageSize.Height);
+            }
+        }
+private void StackPanel_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Chamar o método para exibir a página atual somente após o StackPanel estar totalmente carregado
+            DisplayCurrentPage(currentPageIndex);
+
+        }
+        private void DisplayCurrentPage(int currentPageIndex)
+        {
+            if (pdfImages != null && pdfImages.Count > 0 && currentPageIndex >= 0 && currentPageIndex < pdfImages.Count)
+            {
+                PdfImage currentPdfImage = pdfImages[currentPageIndex]; // Obter o objeto PdfImage atual
+                string imagePath = currentPdfImage.ImagePath; // Acessar o caminho da imagem no objeto PdfImage
+
+                byte[] imageData = File.ReadAllBytes(imagePath); // Lê os bytes da imagem do arquivo
+                BitmapImage bitmap = new BitmapImage();
+                bitmap.BeginInit();
+                bitmap.StreamSource = new MemoryStream(imageData); // Usa os bytes da imagem
+                bitmap.EndInit();
+
+                Image imageControl = new Image();
+                imageControl.Source = bitmap;
+
+                double pdfWidth, pdfHeight, columnOneWidth, columnOneHeight;
+                CalculateDimensions(currentPageIndex, out pdfWidth, out pdfHeight, out columnOneWidth, out columnOneHeight);
+
+                double widthProportion, heightProportion;
+                CalculateProportions(pdfWidth, pdfHeight, columnOneWidth, columnOneHeight, out widthProportion, out heightProportion);
+
+                // Aplicar proporção à largura e altura da imagem
+                double scaledWidth = pdfWidth * widthProportion;
+                double scaledHeight = pdfHeight * heightProportion;
+
+                // Definir as dimensões da imagem
+                imageControl.Width = scaledWidth;
+                imageControl.Height = scaledHeight;
+
+                stackPanel.Children.Clear(); // Limpa o StackPanel antes de adicionar a nova imagem
+                stackPanel.Children.Add(imageControl); // Adiciona o controle de imagem ao StackPanel
+
+                // Atualizar as dimensões do Canvas para corresponder ao tamanho da imagem
+                sizepdf.Width = scaledWidth;
+                sizepdf.Height = scaledHeight;
+
+                // Centralizar verticalmente a imagem
+                imageControl.Loaded += ImageControl_Loaded;
+            }
+            // Chamar o método para verificar e desabilitar os botões de navegação conforme necessário
+            CheckAndDisableNavigationButtons();
+        }
+        private void CalculateDimensions(int currentPageIndex, out double pdfWidth, out double pdfHeight, out double columnOneWidth, out double columnOneHeight)
+        {
+            // Obter as dimensões da página do PDF original
+            System.Windows.Size pageSize = GetPdfPageSize(_selectedPdfFileInfo, currentPageIndex + 1); // currentPageIndex + 1 porque os índices de página começam em 1
+            pdfWidth = pageSize.Width;
+            pdfHeight = pageSize.Height;
+
+            // Obter as dimensões da primeira coluna
+            ColumnDefinition columnZero = grid.ColumnDefinitions[0];
+            double columnZeroWidth = columnZero.ActualWidth;
+
+            // Obter as dimensões da janela
+            double windowWidth = this.ActualWidth; // this refere-se à janela atual
+            double windowHeight = this.ActualHeight;
+
+            //Dimensões da coluna 1
+            columnOneWidth = windowWidth - columnZeroWidth;
+            columnOneHeight = windowHeight;
+        }
+        private void CalculateProportions(double pdfWidth, double pdfHeight, double columnOneWidth, double columnOneHeight, out double widthProportion, out double heightProportion)
+        {
+            widthProportion = columnOneWidth / pdfWidth * 0.87;
+            heightProportion = columnOneHeight / pdfHeight * 0.87;
+        }
+        private void ImageControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            Image imageControl = sender as Image;
+            if (imageControl != null)
+            {
+                // Atualizar as dimensões do Canvas para corresponder ao tamanho da imagem
+                sizepdf.Width = imageControl.ActualWidth;
+                sizepdf.Height = imageControl.ActualHeight;
+            }
+        }
+private void Window_SizeChanged(object sender, SizeChangedEventArgs e)
+        {
+            // Atualizar as dimensões da imagem sempre que o tamanho da janela mudar
+            DisplayCurrentPage(currentPageIndex);
+        }
