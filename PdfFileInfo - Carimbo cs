@@ -1,0 +1,56 @@
+public class PdfFileInfo
+{
+    public string FileName { get; set; }
+    public string FilePath { get; set; }
+    public DateTime LastModified { get; set; }
+
+    public string DisplayText
+    {
+        get { return $"{FileName} - {LastModified.ToString()}"; }
+    }
+}
+
+private void CarregarArquivosPDF()
+{
+    //Limpa a ListView
+    Lista_Pdfs.Items.Clear();
+
+    //Verifica se o diretório existe
+    if (Directory.Exists(this.directoryPath))
+    {
+        //Lista todos os arquivos PDF no diretório
+        string[] pdfFiles = Directory.GetFiles(directoryPath, "*.pdf");
+
+        //Para preencher o controle ListView com os nomes dos arquivos
+        foreach (string pdfFile in pdfFiles)
+        {
+            AdicionarItemPDF(pdfFile);
+        }
+    }
+    else
+    {
+        System.Windows.MessageBox.Show("O diretório especificado não existe.", "Erro", MessageBoxButton.OK, MessageBoxImage.Error);
+    }
+}
+
+ private PdfFileInfo CriarPdfFileInfo(string pdfFile)
+ {
+     return new PdfFileInfo()
+     {
+         FileName = Path.GetFileName(pdfFile),
+         FilePath = pdfFile,
+         LastModified = File.GetLastWriteTime(pdfFile)
+     };
+ }
+
+ // Método para adicionar um item PdfFileInfo à ListView
+ private void AdicionarItemPDF(string pdfFile)
+ {
+     PdfFileInfo fileInfo = CriarPdfFileInfo(pdfFile);
+     Lista_Pdfs.Items.Add(fileInfo);
+ }
+
+private void Atualizar_Click(object sender, RoutedEventArgs e)
+{
+    CarregarArquivosPDF();
+}
