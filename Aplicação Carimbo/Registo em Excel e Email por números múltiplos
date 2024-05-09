@@ -1,0 +1,356 @@
+private async void Carimbo_Click(object sender, RoutedEventArgs e)
+        {
+
+            // Verifica se há retângulos no canvas
+            if (sizepdf.Children.Count == 0)
+            {
+                System.Windows.MessageBox.Show("Não foi colocado nenhum carimbo.");
+                return;
+            }
+
+            //Verifica se há retângulos em todas as páginas
+            bool allPagesStamped = stampRectanglePerPage.All(rectangle => rectangle.Count > 0);
+
+            if (allPagesStamped)
+            {
+                string projectName = ObterNomeProjeto(_selectedPdfName);
+                string primeiraPasta = null;
+                string novoNome = ChangeName.Text.Trim();
+                string pastaSelecionada = "";
+                string pastaDestino = "";
+                // Movendo o arquivo carimbado apenas para o primeiro diretório se a checkbox estiver marcada
+                string firstOutputDirectory = outputDirectories.FirstOrDefault();
+                bool Documentacao = FicheiroDoc.IsChecked == true;
+
+                //if (FicheiroDoc.IsChecked == true)
+                if (Documentacao)
+                {
+                    if (!string.IsNullOrEmpty(firstOutputDirectory))
+                    {
+
+                        //Chama o método para adicionar o carimbo ao PDF
+                        Adicionar_Carimbo(_selectedPdfPath, sizepdf, currentPageIndex + 1, firstOutputDirectory);
+                        string outputFile = System.IO.Path.Combine(firstOutputDirectory, System.IO.Path.GetFileNameWithoutExtension(_selectedPdfPath) + "_APROVADO.pdf");
+                        //Verifica se a pasta do projeto existe, senão cria-a
+                        //string projectFolderPath = System.IO.Path.Combine(firstOutputDirectory, projectName);
+                        string projectFolderPath = pastaDestinoSelecionada ?? System.IO.Path.Combine(firstOutputDirectory, projectName);
+                        pastaSelecionada = System.IO.Path.GetFileName(projectFolderPath);
+                        //// Chamar o método para selecionar o diretório de destino
+                        //PastaAprovados_Click(sender, e);
+                        //if (!string.IsNullOrEmpty(pastaDestinoSelecionada))
+                        //{
+                        //    projectFolderPath = pastaDestinoSelecionada;
+                        //}
+                        if (!Directory.Exists(projectFolderPath))
+                        {
+                            Directory.CreateDirectory(projectFolderPath);
+                        }
+                        string newFileName;
+                        newFileName = System.IO.Path.Combine(projectFolderPath, System.IO.Path.GetFileNameWithoutExtension(novoNome) + "_APROVADO.pdf");
+                        //Verifica se o arquivo de destino já existe
+                        if (File.Exists(newFileName))
+                        {
+                            //Se existir, exclua-o para que possa ser substituído
+                            File.Delete(newFileName);
+                        }
+
+                        File.Move(outputFile, newFileName);
+                        // Obtenha o nome da pasta apenas na primeira iteração
+                        if (primeiraPasta == null)
+                        {
+                            primeiraPasta = System.IO.Path.GetFileName(projectFolderPath);
+                        }
+                    }
+                }
+                else
+                {
+                    // Movendo o arquivo carimbado para todos os diretórios se a checkbox não estiver marcada
+                    foreach (string OutputDirectory in outputDirectories)
+                    {
+                        Adicionar_Carimbo(_selectedPdfPath, sizepdf, currentPageIndex + 1, OutputDirectory);
+                        string outputFile = System.IO.Path.Combine(OutputDirectory, System.IO.Path.GetFileNameWithoutExtension(_selectedPdfPath) + "_APROVADO.pdf");
+                        //Verifica se a pasta do projeto existe, senão cria-a
+                        //string projectFolderPath = System.IO.Path.Combine(OutputDirectory, projectName);
+                        string projectFolderPath = !string.IsNullOrEmpty(pastaDestinoSelecionada) ?
+                                                    System.IO.Path.Combine(OutputDirectory, System.IO.Path.GetFileName(pastaDestinoSelecionada)) :
+                                                    System.IO.Path.Combine(OutputDirectory, projectName);
+                        pastaSelecionada = System.IO.Path.GetFileName(projectFolderPath);
+                        if (!Directory.Exists(projectFolderPath))
+                        {
+                            Directory.CreateDirectory(projectFolderPath);
+                        }
+                        string newFileName;
+                        newFileName = System.IO.Path.Combine(projectFolderPath, System.IO.Path.GetFileNameWithoutExtension(novoNome) + "_APROVADO.pdf");
+                        //Verifica se o arquivo de destino já existe
+                        if (File.Exists(newFileName))
+                        {
+                            //Se existir, exclua-o para que possa ser substituído
+                            File.Delete(newFileName);
+                        }
+                        File.Move(outputFile, newFileName);
+                        // Obtenha o nome da pasta apenas na primeira iteração
+                        if (primeiraPasta == null)
+                        {
+                            primeiraPasta = System.IO.Path.GetFileName(projectFolderPath);
+                        }
+                    }
+                }
+                List<object[]> registoCarimbos = new List<object[]>();
+                pastaDestino = pastaSelecionada;
+                // Adicione apenas o nome da primeira pasta à lista
+                List<string> pastasMovidas = new List<string>();
+                if (primeiraPasta != null)
+                {
+                    pastasMovidas.Add(primeiraPasta);
+                }
+
+                string query = "SELECT email FROM Utilizadores_Teste WHERE Maquinacao = 1 ";
+                //string query = "SELECT email FROM Utilizadores WHERE Maquinacao = 1 ";
+
+                List<string> destinatarios = new List<string>();
+
+                try
+                {
+                    using (SqlConnection connection = new SqlConnection(connectionString))
+                    {
+                        connection.Open();
+                        using (SqlCommand command = new SqlCommand(query, connection))
+                        {
+                            using (SqlDataReader reader = command.ExecuteReader())
+                            {
+                                while (reader.Read())
+                                {
+                                    string email = reader.GetString(0);
+                                    destinatarios.Add(email);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Erro ao obter destinatários do email: {ex.Message}");
+                }
+                string nomeFicheiroe = System.IO.Path.GetFileNameWithoutExtension(_selectedPdfName);
+
+
+                // Atualiza a ListView
+                if (mainListView != null && mainListView.SelectedItem != null)
+                {
+                    mainListView.Items.Remove(mainListView.SelectedItem);
+                }
+                await Task.Delay(150);
+
+                //Adiciona as informações do desenho à base de dados
+                string filePath = _selectedPdfPath;
+
+                //Extrair as características do PDF
+                List<ReferenceCaracteristicsModel> listaCaracteristicas = ExtractCaracteristicsPdf(filePath);
+
+                registoCarimbos.Add(new object[] { nomeFicheiroe, pastaDestino, utilizadorSelecionado, DateTime.Now, Documentacao ? "Documentação" : "Maquinação" });
+                //Criar uma nova conexão com o banco de dados
+                using (SqlConnection connection = new SqlConnection(connectionString))
+                {
+                    connection.Open();
+
+                    //Para cada característina na lista, insira os dados na tabela do banco de dados
+                    foreach (var caracteristica in listaCaracteristicas)
+                    {
+                        caracteristica.codigoProjeto = projectName;
+
+                        DateTime dataImportacao = DateTime.Now;
+                        bool checkBoxSelecionada = FicheiroDoc.IsChecked ?? false;
+
+                        // Verificar a versão atual do código interno
+                        int versao = 0;
+                        string codigoInternoBase = caracteristica.codigoInterno;
+
+                        // Encontra o último espaço em branco
+                        int lastSpaceIndex = codigoInternoBase.LastIndexOf(' ');
+
+                        if (lastSpaceIndex != -1)
+                        {
+                            // Verifica se o caractere após o último espaço é uma letra
+                            if (lastSpaceIndex + 1 < codigoInternoBase.Length && char.IsLetter(codigoInternoBase[lastSpaceIndex + 1]))
+                            {
+                                // Se for uma letra, ajusta o código interno para considerar apenas a parte antes dele
+                                codigoInternoBase = codigoInternoBase.Substring(0, lastSpaceIndex);
+                            }
+                        }
+
+                        // Consulta para obter a versão máxima com o código interno base
+                        string selectVersaoQuery = "SELECT MAX(Versao) FROM EstLaser WHERE Codigo_Interno LIKE @CodigoInternoBase";
+                        using (SqlCommand selectVersaoCommand = new SqlCommand(selectVersaoQuery, connection))
+                        {
+                            selectVersaoCommand.Parameters.AddWithValue("@CodigoInternoBase", $"{codigoInternoBase}%");
+                            object maxVersaoObj = selectVersaoCommand.ExecuteScalar();
+                            if (maxVersaoObj != DBNull.Value)
+                            {
+                                versao = Convert.ToInt32(maxVersaoObj) + 1;
+                            }
+                        }
+
+                        string insertQuery = "INSERT INTO EstLaser (Codigo_Interno, Material, Quantidade, Tratamento, MABEC, Codigo_Projeto, Data_de_Importacao, Responsavel_Importacao, Versao, Documentacao)" +
+                                             "VALUES (@CodigoInterno, @Material, @Quantidade, @Tratamento, @Mabec, @CodigoProjeto, @DataImportacao, @NomeUtilizador, @Versao, @Documentacao)";
+                        using (SqlCommand insertCommand = new SqlCommand(insertQuery, connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("@CodigoInterno", caracteristica.codigoInterno);
+                            insertCommand.Parameters.AddWithValue("@Material", caracteristica.material);
+                            insertCommand.Parameters.AddWithValue("@Quantidade", caracteristica.quantidade);
+                            insertCommand.Parameters.AddWithValue("@Tratamento", caracteristica.tratamento);
+                            insertCommand.Parameters.AddWithValue("@Mabec", caracteristica.mabec);
+                            insertCommand.Parameters.AddWithValue("@CodigoProjeto", caracteristica.codigoProjeto);
+                            insertCommand.Parameters.AddWithValue("@DataImportacao", dataImportacao);
+                            insertCommand.Parameters.AddWithValue("@NomeUtilizador", utilizadorSelecionado);
+                            insertCommand.Parameters.AddWithValue("@Versao", versao);
+                            insertCommand.Parameters.AddWithValue("@Documentacao", checkBoxSelecionada ? 1 : 0); //1 se a checkbox estiver selecionada, 0 se não
+
+                            // Executa a instrução SQL
+                            insertCommand.ExecuteNonQuery();
+                        }
+                    }
+                    connection.Close();
+                }
+                Console.WriteLine("Dados inseridos na tabela com sucesso!");
+
+                // Cria o registro de arquivos carimbados se não existir
+                IWorkbook workbook;
+                ISheet sheet;
+
+                if (File.Exists(logFilePath))
+                {
+                    // Se o arquivo existir, abre-o
+                    using (FileStream fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read))
+                    {
+                        workbook = new XSSFWorkbook(fs);
+                    }
+                    sheet = workbook.GetSheetAt(0); // Supondo que a planilha que você quer modificar é a primeira (índice 0)
+                }
+                else
+                {
+                    // Se o arquivo não existir, cria um novo arquivo Excel e uma nova planilha
+                    workbook = new XSSFWorkbook();
+                    sheet = workbook.CreateSheet("Histórico de Aprovados");
+
+                    // Cria o cabeçalho
+                    IRow headerRow = sheet.CreateRow(0);
+                    headerRow.CreateCell(0).SetCellValue("Código Interno");
+                    headerRow.CreateCell(1).SetCellValue("Pasta de Destino");
+                    headerRow.CreateCell(2).SetCellValue("Utilizador");
+                    headerRow.CreateCell(3).SetCellValue("Data e Hora");
+                    headerRow.CreateCell(4).SetCellValue("Destino");
+                }
+
+                // Obtém o número da última linha preenchida
+                int lastRowNum = sheet.LastRowNum;
+
+                // Adiciona os dados às linhas seguintes no Excel
+                foreach (var dado in registoCarimbos)
+                {
+                    IRow row = sheet.CreateRow(++lastRowNum);
+                    for (int j = 0; j < dado.Length; j++)
+                    {
+                        row.CreateCell(j).SetCellValue(Convert.ToString(dado[j]));
+                    }
+                    for (int col = 0; col < sheet.GetRow(0).LastCellNum; col++)
+                    {
+                        sheet.AutoSizeColumn(col);
+                    }
+
+                    contadorCarimbos++;
+                    Console.WriteLine(contadorCarimbos);
+
+                }
+                // Salva o arquivo Excel
+                using (FileStream fs = new FileStream(logFilePath, FileMode.Create, FileAccess.Write))
+                {
+                    workbook.Write(fs);
+                }
+
+                // Verifica se já foram adicionados dois ficheiros ao registo
+                if (lastRowNum % 2 == 0)
+                {
+                    foreach (string destinatario in destinatarios)
+                    {
+                        EnviarEmailOutlook(destinatario, nomeFicheiro, pastasMovidas);
+                    }
+                }
+                //Exclui o arquivo original da pasta de entrada
+                //File.Delete(_selectedPdfFileInfo.FilePath);
+                // Fecha a janela secundária
+                Close();
+            }
+            else
+            {
+                System.Windows.MessageBox.Show("Por favor adicione um carimbo em cada página antes de finalizar o processo.", "Atenção", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
+        }
+public void EnviarEmailOutlook(string destinatario, string nomeFicheiro, List<string> pastasMovidas)
+        {
+            //Configurações do servidor SMTP do Outlook
+            string smtpServer = "smtp-mail.outlook.com";
+            int portaSMTP = 587;
+            string emailRemetente = "xxxxxxxxxxx";
+            string senha = "xxxxxxxxxxxxxxxxxxxxxxxx";
+
+            //Configurações do email
+            string assunto = "Ficheiro Carimbado e Movido";
+            string corpo = $"Os seguintes ficheiros foram aprovados e movidos para as seguintes pastas:\n\n ";
+
+            // Lê o arquivo Excel para obter as informações dos ficheiros carimbados
+            try
+            {
+                // Abre o arquivo Excel
+                using (FileStream fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read))
+                {
+                    IWorkbook workbook = new XSSFWorkbook(fs);
+                    ISheet sheet = workbook.GetSheetAt(0); // Supondo que a planilha que contém os registros é a primeira (índice 0)
+
+                    // Obtém o número da última linha preenchida
+                    int lastRowNum = sheet.LastRowNum;
+
+                    // Obtém as informações dos dois últimos ficheiros carimbados na contagem atual
+                    for (int i = Math.Max(0, lastRowNum - 1); i <= lastRowNum; i++)
+                    {
+                        IRow row = sheet.GetRow(i);
+                        if (row != null)
+                        {
+                            // Obtém as informações do ficheiro e pasta movida da linha do Excel
+                            string nomeFicheiroe = row.GetCell(0)?.StringCellValue;
+                            string pastaMovida = row.GetCell(1)?.StringCellValue;
+
+                            // Adiciona as informações ao corpo do email
+                            corpo += $"Ficheiro: {nomeFicheiroe}\n";
+                            corpo += $"Pasta de destino: {pastaMovida}\n\n";
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro ao ler o arquivo Excel: " + ex.Message);
+                return;
+            }
+
+            //Configuração da mensagem
+            MailMessage mensagem = new MailMessage(emailRemetente, destinatario, assunto, corpo);
+
+            //Configuração do cliente SMTP
+            SmtpClient clienteSmtp = new SmtpClient(smtpServer, portaSMTP);
+            clienteSmtp.EnableSsl = true;
+
+            //Autenticação no servidor SMTP
+            clienteSmtp.Credentials = new NetworkCredential(emailRemetente, senha);
+
+            try
+            {
+                //Envio do email
+                clienteSmtp.Send(mensagem);
+                Console.WriteLine("Email enviado com sucesso!");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Erro ao enviar o email:" + ex.Message);
+            }
+        }
