@@ -1,0 +1,15 @@
+private void ListView_SelectionChanged(object sender, SelectionChangedEventArgs e)
+{
+    if (Lista_Pdfs.SelectedItem != null && Lista_Pdfs.SelectedItem is PdfFileInfo selectedPdfFileInfo)
+    {
+        _selectedPdfPath = selectedPdfFileInfo.FilePath;
+        PdfPreview.Visibility = Visibility.Visible;
+        PdfPreview.Navigate(new Uri(_selectedPdfPath));
+    }
+    else
+    {
+        // Limpa a visualização do WebBrowser quando nenhum arquivo estiver selecionado
+        PdfPreview.Visibility=Visibility.Collapsed;
+        PdfPreview.Navigate("about:blank");
+    }
+}
