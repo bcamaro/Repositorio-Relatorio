@@ -1,0 +1,67 @@
+private void CheckAndDisableNavigationButtons()
+{
+    if (pdfImages != null && pdfImages.Count > 1)
+    {
+        Previous_Page.IsEnabled = (currentPageIndex > 0);
+        Next_Page.IsEnabled = (currentPageIndex < pdfImages.Count - 1);
+    }
+    else
+    {
+        Previous_Page.IsEnabled = false;
+        Next_Page.IsEnabled = false;
+    }
+
+}
+
+private void NextPageButton_Click(object sender, RoutedEventArgs e)
+{
+    // Oculta todos os carimbos da página anterior
+    HideStampOfPage(currentPageIndex);
+
+    // Verifica se há páginas restantes
+    if (currentPageIndex < pdfImages.Count - 1)
+    {
+        currentPageIndex++;
+
+        // Exibe os carimbos da página atual
+        ShowStampOfPage(currentPageIndex);
+
+        // Verifica se é a última página
+        if (currentPageIndex == pdfImages.Count - 1)
+        {
+            Next_Page.IsEnabled = false; // Desativa o botão de próxima página
+        }
+
+        Previous_Page.IsEnabled = true; // Habilita o botão de página anterior
+    }
+
+    DisplayCurrentPage(currentPageIndex); // Chamada para exibir a próxima página
+    CheckAndDisableNavigationButtons();
+}
+
+private void PreviousPageButton_Click(object sender, RoutedEventArgs e)
+{
+    // Oculta todos os carimbos da página anterior
+    HideStampOfPage(currentPageIndex);
+
+    // Verifica se há páginas anteriores
+    if (currentPageIndex > 0)
+    {
+        currentPageIndex--;
+
+        // Exibe os carimbos da página atual
+        ShowStampOfPage(currentPageIndex);
+
+        // Verifica se é a primeira página
+        if (currentPageIndex == 0)
+        {
+            Previous_Page.IsEnabled = false; // Desativa o botão de página anterior
+        }
+
+        Next_Page.IsEnabled = true; // Habilita o botão de próxima página
+    }
+
+    DisplayCurrentPage(currentPageIndex); // Exibe a página anterior
+    CheckAndDisableNavigationButtons();
+
+}
