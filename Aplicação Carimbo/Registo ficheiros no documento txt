@@ -1,0 +1,15 @@
+// Cria o registro de arquivos carimbados se não existir
+                string logFilePath = @"PROJETOS_EM_CURSO_Desenhos Aprovados_ CODIGO_PROJETO\registo_carimbados.txt";
+                if (!File.Exists(logFilePath))
+                {
+                    using (StreamWriter writer = new StreamWriter(logFilePath))
+                    {
+                        writer.WriteLine("Arquivos Carimbados:");
+                    }
+                }
+                // Adiciona o arquivo carimbado ao registro com data e hora
+                string stampedFileEntry = $"- {_selectedPdfFileInfo.FileName} - Movido para a pasta {projectName} - {DateTime.Now}";
+                using (StreamWriter writer = File.AppendText(logFilePath))
+                {
+                    writer.WriteLine(stampedFileEntry);
+                }
