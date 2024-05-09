@@ -1,0 +1,103 @@
+bool IsExcelFileOpen(string logfilePath)
+{
+    try
+    {
+        // Tenta abrir o arquivo Excel em modo de leitura
+        using (FileStream fs = new FileStream(logfilePath, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            // Se o arquivo estiver aberto por outro processo, uma exceção será lançada
+            return false;
+        }
+    }
+    catch (IOException)
+    {
+        // Se o arquivo estiver aberto por outro processo, retorna true
+        return true;
+    }
+}
+void WaitForExcelToClose(string logfilePath)
+{
+    // Loop até que o arquivo Excel esteja fechado
+    while (IsExcelFileOpen(logfilePath))
+    {
+        // Exibe uma mensagem informando que o Excel está aberto e aguarda um pouco antes de verificar novamente
+        System.Windows.MessageBox.Show("Por favor, feche o arquivo Excel antes de continuar com o processo.", "Excel Aberto", MessageBoxButton.OK, MessageBoxImage.Warning);
+
+        // Aguarda 1 segundo antes de verificar novamente
+        System.Threading.Thread.Sleep(7000);
+    }
+}
+
+//No evento do botão carimbo:
+
+IWorkbook workbook = null;
+ISheet sheet = null;
+
+if (File.Exists(logFilePath))
+{
+    if (IsExcelFileOpen(logFilePath))
+    {
+        WaitForExcelToClose(logFilePath);
+    }
+    else
+    {
+        // Se o arquivo existir e não estiver aberto, abre-o
+        using (FileStream fs = new FileStream(logFilePath, FileMode.Open, FileAccess.Read))
+        {
+            workbook = new XSSFWorkbook(fs);
+        }
+        sheet = workbook.GetSheetAt(0); // Supondo que a planilha que você quer modificar é a primeira (índice 0)
+    }
+}
+else
+{
+    // Se o arquivo não existir, cria um novo arquivo Excel e uma nova planilha
+    workbook = new XSSFWorkbook();
+    sheet = workbook.CreateSheet("Histórico de Aprovados");
+
+    // Cria o cabeçalho
+    IRow headerRow = sheet.CreateRow(0);
+    headerRow.CreateCell(0).SetCellValue("Código Interno");
+    headerRow.CreateCell(1).SetCellValue("Pasta de Destino");
+    headerRow.CreateCell(2).SetCellValue("Utilizador");
+    headerRow.CreateCell(3).SetCellValue("Data e Hora");
+    headerRow.CreateCell(4).SetCellValue("Destino");
+}
+
+// Verifica se workbook e sheet foram inicializados antes de usá-los
+if (workbook != null && sheet != null)
+{
+    // Obtém o número da última linha preenchida
+    int lastRowNum = sheet.LastRowNum;
+
+    // Adiciona os dados às linhas seguintes no Excel
+    foreach (var dado in registoCarimbos)
+    {
+        IRow row = sheet.CreateRow(++lastRowNum);
+        for (int j = 0; j < dado.Length; j++)
+        {
+            row.CreateCell(j).SetCellValue(Convert.ToString(dado[j]));
+        }
+        for (int col = 0; col < sheet.GetRow(0).LastCellNum; col++)
+        {
+            sheet.AutoSizeColumn(col);
+        }
+
+        contadorCarimbos++;
+        Console.WriteLine(contadorCarimbos);
+        EscreverNoArquivo(caminhologtxt, "Dados inseridos no Excel");
+    }
+
+    // Salva o arquivo Excel após adicionar os dados
+    try
+    {
+        using (FileStream fs = new FileStream(logFilePath, FileMode.Create, FileAccess.Write))
+        {
+            workbook.Write(fs);
+        }
+    }
+    catch (IOException ex)
+    {
+        // Lida com a exceção de E/S ao salvar o arquivo
+        Console.WriteLine($"Erro ao salvar o arquivo Excel: {ex.Message}");
+    }
