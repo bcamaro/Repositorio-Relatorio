@@ -1,0 +1,123 @@
+private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            //Verifica se há imagens no StackPanel
+            if (pdfImages != null && pdfImages.Count > 0 && currentPageIndex >= 0 && currentPageIndex < pdfImages.Count)
+            {
+                PdfImage currentImage = pdfImages[currentPageIndex];
+                
+                if (!currentImage.IsStamped)
+                {
+                    //Adiciona um novo carimbo
+                    AddStamp(e.GetPosition(sizepdf));
+                    ////Obtém as coordenadas do clique do rato
+                    //System.Windows.Point position = e.GetPosition(sizepdf);
+                    
+                    //// Cria um carimbo com base nas propriedades definidas
+                    //CustomStampLayout stampLayout = new CustomStampLayout(logoImagePath, signatureImagePath, DateTime.Now);
+
+                    //// Cria um retângulo com as dimensões do carimbo
+                    //System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle();
+                    //rectangle.Width = stampLayout.RectangleWidth; // Largura do retângulo
+                    //rectangle.Height = stampLayout.RectangleHeight; // Altura do retângulo
+                    //rectangle.Stroke = System.Windows.Media.Brushes.DarkBlue; // Cor da borda do retângulo
+                    //rectangle.StrokeThickness = 2; // Espessura da borda do retângulo
+
+                    //// Define a posição do retângulo com base nas coordenadas do clique
+                    //Canvas.SetLeft(rectangle, position.X - (stampLayout.RectangleWidth / 2));
+                    //Canvas.SetTop(rectangle, position.Y - (stampLayout.RectangleHeight / 2));
+
+                    //// Adiciona o retângulo ao Canvas
+                    //sizepdf.Children.Add(rectangle);
+
+                    ////Marca a imagem atual como carimbada
+                    //currentImage.IsStamped = true;
+                }
+                else
+                {
+                    //Atualiza a posição do carimbo existente
+                    UpdateStamp(currentImage, e.GetPosition(sizepdf));
+                }
+            }
+
+        }
+
+        private void AddStamp(System.Windows.Point position)
+        {
+            // Cria um carimbo com base nas propriedades definidas
+            CustomStampLayout stampLayout = new CustomStampLayout(logoImagePath, signatureImagePath, DateTime.Now);
+
+            // Cria um retângulo com as dimensões do carimbo
+            System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle();
+            rectangle.Width = stampLayout.RectangleWidth; // Largura do retângulo
+            rectangle.Height = stampLayout.RectangleHeight; // Altura do retângulo
+            rectangle.Stroke = System.Windows.Media.Brushes.DarkBlue; // Cor da borda do retângulo
+            rectangle.StrokeThickness = 2; // Espessura da borda do retângulo
+
+            // Define a posição do retângulo com base nas coordenadas do clique
+            Canvas.SetLeft(rectangle, position.X - (stampLayout.RectangleWidth / 2));
+            Canvas.SetTop(rectangle, position.Y - (stampLayout.RectangleHeight / 2));
+
+            // Adiciona o retângulo ao Canvas
+            sizepdf.Children.Add(rectangle);
+
+            //Atualiza a posição do carimbo na imagem
+            PdfImage currentImage = pdfImages[currentPageIndex];
+            currentImage.IsStamped = true;
+            currentImage.StampPosition = position;
+        }
+
+        private void UpdateStamp(PdfImage currentImage, System.Windows.Point newPosition)
+        {
+            //Encontra o retângulo coreespondente ao carimbo na página
+            System.Windows.Shapes.Rectangle stampRectangle = FindStampRectangle(currentImage);
+
+            if (stampRectangle != null)
+            {
+                //Atualiza a posição do retângulo do carimbo
+                Canvas.SetLeft(stampRectangle, newPosition.X - (stampRectangle.Width / 2));
+                Canvas.SetTop(stampRectangle, newPosition.Y - (stampRectangle.Height / 2));
+
+                //Atualiza a posição do carimbo na imagem
+                currentImage.StampPosition = newPosition;
+            }
+        }
+
+        private System.Windows.Shapes.Rectangle FindStampRectangle(PdfImage currentImage)
+        {
+            //Itera sobre os elementos do Canvas para encontrar o retângulo do carimbo
+            foreach (var child in sizepdf.Children)
+            {
+                if (child is System.Windows.Shapes.Rectangle rectangle &&
+                    Canvas.GetLeft(rectangle) == currentImage.StampPosition.X - (rectangle.Width/2) &&
+                    Canvas.GetTop(rectangle) == currentImage.StampPosition.Y - (rectangle.Height/2))
+                {
+                    return rectangle;
+                }
+            }
+            return null;
+        }
+       private void UpdateStampButtonState()
+       {
+          // Desabilita o botão de carimbo se não houver retângulos no canvas
+          Carimbar.IsEnabled = sizepdf.Children.Count > 0;
+       }
+private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            //Verifica se há imagens no StackPanel
+            if (pdfImages != null && pdfImages.Count > 0 && currentPageIndex >= 0 && currentPageIndex < pdfImages.Count)
+            {
+                PdfImage currentImage = pdfImages[currentPageIndex];
+                
+                if (!currentImage.IsStamped)
+                {
+                    //Adiciona um novo carimbo
+                    AddStamp(e.GetPosition(sizepdf));
+                }
+                else
+                {
+                    //Atualiza a posição do carimbo existente
+                    UpdateStamp(currentImage, e.GetPosition(sizepdf));
+                }
+            }
+
+        }
