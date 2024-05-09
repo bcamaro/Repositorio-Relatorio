@@ -8,29 +8,7 @@ private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
                 if (!currentImage.IsStamped)
                 {
                     //Adiciona um novo carimbo
-                    AddStamp(e.GetPosition(sizepdf));
-                    ////Obtém as coordenadas do clique do rato
-                    //System.Windows.Point position = e.GetPosition(sizepdf);
-                    
-                    //// Cria um carimbo com base nas propriedades definidas
-                    //CustomStampLayout stampLayout = new CustomStampLayout(logoImagePath, signatureImagePath, DateTime.Now);
-
-                    //// Cria um retângulo com as dimensões do carimbo
-                    //System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle();
-                    //rectangle.Width = stampLayout.RectangleWidth; // Largura do retângulo
-                    //rectangle.Height = stampLayout.RectangleHeight; // Altura do retângulo
-                    //rectangle.Stroke = System.Windows.Media.Brushes.DarkBlue; // Cor da borda do retângulo
-                    //rectangle.StrokeThickness = 2; // Espessura da borda do retângulo
-
-                    //// Define a posição do retângulo com base nas coordenadas do clique
-                    //Canvas.SetLeft(rectangle, position.X - (stampLayout.RectangleWidth / 2));
-                    //Canvas.SetTop(rectangle, position.Y - (stampLayout.RectangleHeight / 2));
-
-                    //// Adiciona o retângulo ao Canvas
-                    //sizepdf.Children.Add(rectangle);
-
-                    ////Marca a imagem atual como carimbada
-                    //currentImage.IsStamped = true;
+                    AddStamp(e.GetPosition(sizepdf));        
                 }
                 else
                 {
