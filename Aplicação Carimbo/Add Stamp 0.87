@@ -1,0 +1,50 @@
+ private void AddStamp(System.Windows.Point position)
+        {
+
+            PdfImage currentImage = pdfImages[currentPageIndex]; //Obtém a imagem PDF atual
+
+            if (currentImage.PageNumber == currentPageIndex + 1) //Verifica se o número da página corresponde à página atual
+            {
+                // Cria um carimbo com base nas propriedades definidas
+                CustomStampLayout stampLayout = new CustomStampLayout(logoImagePath, signatureImagePath, DateTime.Now);
+
+                // Cria um retângulo com as dimensões do carimbo
+                System.Windows.Shapes.Rectangle rectangle = new System.Windows.Shapes.Rectangle();
+                rectangle.Width = stampLayout.RectangleWidth * 0.87; // Largura do retângulo
+                rectangle.Height = stampLayout.RectangleHeight * 0.87; // Altura do retângulo
+                rectangle.Stroke = System.Windows.Media.Brushes.DarkBlue; // Cor da borda do retângulo
+                rectangle.StrokeThickness = 2; // Espessura da borda do retângulo
+
+                // Define a posição do retângulo com base nas coordenadas do clique
+                Canvas.SetLeft(rectangle, position.X); // Posição X do canto esquerdo
+                Canvas.SetTop(rectangle, position.Y); // Posição Y do canto inferior
+
+                // Adiciona o retângulo ao Canvas
+                sizepdf.Children.Add(rectangle);
+
+                //Adiciona o retângulo à lista correspondente à página atual
+                stampRectanglePerPage[currentPageIndex].Add(rectangle);
+
+                //Cria e configura um TextBlock para exibir o número da página
+                TextBlock pageNumberTextBlock = new TextBlock();
+                pageNumberTextBlock.Text = $"Página {currentPageIndex + 1}";
+                pageNumberTextBlock.Foreground = System.Windows.Media.Brushes.Black;
+                pageNumberTextBlock.FontSize = 12 * 0.87;
+                pageNumberTextBlock.Tag = (currentPageIndex + 1).ToString(); //Associa o número da página ao TextBlock
+
+                //Define a posição do TextBlock ao lado do retângulo
+                Canvas.SetLeft(pageNumberTextBlock, Canvas.GetLeft(rectangle)); // Alinha o TextBlock com o lado esquerdo do retângulo
+                Canvas.SetTop(pageNumberTextBlock, Canvas.GetTop(rectangle) - pageNumberTextBlock.ActualHeight - 15 * 0.87); // Alinha o TextBlock acima do retângulo com um espaço de 5 pixels
+
+                //Adiciona o TextBlock ao Canvas
+                sizepdf.Children.Add(pageNumberTextBlock);
+
+                currentImage.TextBlock = pageNumberTextBlock; //Armazena o TextBlock associado ao carimbo
+
+                //Atualiza a posição do carimbo na imagem
+                currentImage.IsStamped = true;
+                currentImage.StampPosition = position;
+            }
+            UpdateStampButtonState();
+            Console.WriteLine(utilizadorSelecionado);
+        }
