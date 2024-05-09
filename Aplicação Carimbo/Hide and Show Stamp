@@ -1,0 +1,31 @@
+private void HideStampOfPage(int pageIndex)
+{
+    foreach (var rectangle in stampRectanglePerPage[pageIndex])
+    {
+        rectangle.Visibility = Visibility.Hidden;
+    }
+
+    foreach (var pdfImage in pdfImages)
+    {
+        if (pdfImage.PageNumber == pageIndex + 1 && pdfImage.TextBlock != null)
+        {
+            pdfImage.TextBlock.Visibility = Visibility.Hidden;
+        }
+    }
+}
+
+private void ShowStampOfPage(int pageIndex)
+{
+    foreach (var rectangle in stampRectanglePerPage[pageIndex])
+    {
+        rectangle.Visibility = Visibility.Visible;
+    }
+
+    foreach (var pdfImage in pdfImages)
+    {
+        if (pdfImage.PageNumber == pageIndex + 1 && pdfImage.TextBlock != null)
+        {
+            pdfImage.TextBlock.Visibility = Visibility.Visible;
+        }
+    }
+}
