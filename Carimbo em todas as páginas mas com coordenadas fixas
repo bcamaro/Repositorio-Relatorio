@@ -1,0 +1,103 @@
+private void Adicionar_Carimbo(string filePath)
+        {
+            foreach (string OutputDirectory in outputDirectories)
+            {
+
+                using (var pdfReader = new PdfReader(filePath))
+                {
+                    string outputFile = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(filePath) + "_A_Aprovado.pdf");
+                    using (var fileStream = new FileStream(outputFile, FileMode.Create))
+                    using (var pdfStamper = new PdfStamper(pdfReader, fileStream))
+                    {
+                        //Obtém o número total de páginas do PDF
+                        int pageCount = pdfReader.NumberOfPages;
+                        //Itera sobre todas as páginas do PDF
+                        for (int i = 1; i <= pageCount; i++)
+                        {
+                            var pdfContentByte = pdfStamper.GetOverContent(i);
+
+                            // Obtém a página em que deseja adicionar o carimbo (aqui, estamos pegando a primeira página)
+                            //var pdfContentByte = pdfStamper.GetOverContent(1);
+
+                            //Carrega a imagem para o carimbo
+                            var imagePath = @"C:\Users\Eduardo\Desktop\Universidade\Anteprojeto DPE\Relatório de Estágio\Imagens\Atena.png";
+                            var image = iTextSharp.text.Image.GetInstance(imagePath);
+                            var imagePath2 = @"C:\Users\Eduardo\Desktop\Universidade\Anteprojeto DPE\Relatório de Estágio\Imagens\Assinatura.png";
+                            var assin = iTextSharp.text.Image.GetInstance(imagePath2);
+
+                            //Redimensiona a imagem para caber em uma caixa de 100x100 pontos
+                            image.ScaleToFit(60, 60);
+                            image.SetAbsolutePosition(27 + xOffset, 10 + yOffset);
+                            assin.ScaleToFit(65, 65);
+                            assin.SetAbsolutePosition(100 + xOffset, 10 + yOffset);
+
+
+                            //Define as coordenadas da imagem e do texto; width - largura; height - altura
+                            float xImage = 10 + xOffset;
+                            float yImage = 10 + yOffset;
+                            float xassin = 100 + xOffset;
+                            float yassin = 0 + yOffset;
+                            float imageWidth = image.ScaledWidth;
+                            float imageHeight = image.ScaledHeight;
+                            float assinWidth = assin.ScaledWidth;
+                            float assinHeight = assin.ScaledHeight;
+
+
+                            // Define a fonte e o tamanho do texto do carimbo
+                            var baseFont = BaseFont.CreateFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.NOT_EMBEDDED);
+                            var font = new Font(baseFont, 12, Font.NORMAL);
+
+                            // Define o texto do carimbo (data e hora)
+                            var DateTimeText = $"{DateTime.Now}";
+                            float xDateTimeText = 100 + xOffset;
+                            float yDateTimeText = 100 + yOffset;
+
+                            //Calcula as dimensões da caixa delimitadora
+                            float boxWidth = imageWidth + xDateTimeText + 3;
+                            float boxHeight = imageHeight + 5;
+
+                            //Define as coordenadas do retângulo delimitador
+                            float xRect = xImage - xOffset2;
+                            float yRect = yImage - yOffset2;
+                            float widthRect = boxWidth;
+                            float heightRect = boxHeight;
+
+                            //Adiciona a imagem à página
+                            pdfContentByte.AddImage(image);
+                            pdfContentByte.AddImage(assin);
+
+                            //Define a cor e espessura da linha
+                            pdfContentByte.SetRGBColorStroke(0, 0, 1);
+                            pdfContentByte.SetLineWidth(1); //espessura da linha em pontos
+
+                            //Desenha o retângulo delimitador
+                            pdfContentByte.Rectangle(xRect, yRect, widthRect, heightRect);
+                            pdfContentByte.Stroke();
+
+
+                            // Define as coordenadas onde o carimbo será colocado (neste exemplo, está centralizado na parte inferior da página)
+                            var x = 85 + xOffset;
+                            var y = 50 + yOffset;
+
+
+                            // Inicia a escrita do texto
+                            pdfContentByte.BeginText();
+
+                            // Define a fonte e o tamanho do texto
+                            pdfContentByte.SetFontAndSize(baseFont, 12);
+
+                            // Define as coordenadas do texto para o nome
+                            pdfContentByte.SetTextMatrix(x, y);
+
+                            //Escreve a Dta a e Hora
+                            pdfContentByte.ShowText(DateTimeText);
+
+                            // Finaliza a escrita do texto
+                            pdfContentByte.EndText();
+                        }
+                        // Fecha o PDF
+                        pdfStamper.Close();
+
+                    }
+                }
+            }
