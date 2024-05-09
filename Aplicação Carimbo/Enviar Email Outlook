@@ -3,8 +3,8 @@ public void EnviarEmailOutlook(string destinatario, string nomeFicheiro, List<st
             //Configurações do servidor SMTP do Outlook
             string smtpServer = "smtp-mail.outlook.com";
             int portaSMTP = 587;
-            string emailRemetente = "gip_atena@outlook.com";
-            string senha = "1b,ji$:8kLt<3@~rO>?_M]n;3!8/mx";
+            string emailRemetente = "xxxxxxxxxxxxxx";
+            string senha = "xxxxxxxxxxxxxxxxxxxx";
 
             //Configurações do email
             string assunto = "Ficheiro Carimbado e Movido";
@@ -71,6 +71,6 @@ foreach (string OutputDirectory in outputDirectories)
                 {
                     pastasMovidas.Add(primeiraPasta);
                 }
-                string destinatario = "barbara.12@live.com.pt";
+                string destinatario = "xxxxxxxxxxxxx";
                 string nomeFicheiro = System.IO.Path.GetFileNameWithoutExtension(_selectedPdfFileInfo.FileName);
                 EnviarEmailOutlook(destinatario, nomeFicheiro, pastasMovidas);
