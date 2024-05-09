@@ -1,0 +1,24 @@
+private void SearchBar_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            //Obtém o texto digitado pelo usuário na TextBox de pesquisa e converte para minúsculas
+            string searchFile = SearchBar.Text.ToLower();
+            Lista_Pdfs.Items.Clear();
+            string[] pdfFiles = Directory.GetFiles(directoryPath, "*pdf");
+            //Adiciona apenas os arquivos que correspondem ao termo de pesquisa à ListView
+            foreach (string pdfFile in pdfFiles)
+            {
+                var fileInfo = new PdfFileInfo()
+                {
+                    FileName = Path.GetFileName(pdfFile),
+                    FilePath = pdfFile,
+                    LastModified = File.GetLastWriteTime(pdfFile)
+                };
+
+                //Verifica se o nome do arquivo PDF contém o termo de pesquisa digitado pelo usuário
+                if (fileInfo.FileName.ToLower().Contains(searchFile))
+                {
+                   //Se o nome do arquivo contiver o termo de pesquisa, adiciona o objeto PdfFileInfo à ListView
+                    Lista_Pdfs.Items.Add(fileInfo);
+                }
+            }
+        }
