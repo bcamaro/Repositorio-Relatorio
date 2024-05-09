@@ -18,8 +18,6 @@
                         foreach (string OutputDirectory in outputDirectories)
                         {
                             string outputFile = Path.Combine(OutputDirectory, Path.GetFileNameWithoutExtension(filePath) + "_A_Aprovado.pdf");
-                            //Adicionar_Carimbo(filePath);
-                            //File.Move(selectedPdf, outputFile);
                         }
 
                         // Atualiza a ListView
